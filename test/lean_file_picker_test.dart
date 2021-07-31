@@ -9,7 +9,7 @@ void main() {
 
   setUp(() {
     channel.setMockMethodCallHandler((MethodCall methodCall) async {
-      return '42';
+      return '/a/file';
     });
   });
 
@@ -17,7 +17,7 @@ void main() {
     channel.setMockMethodCallHandler(null);
   });
 
-  test('getPlatformVersion', () async {
-    expect(await LeanFilePicker.platformVersion, '42');
+  test('pickFile', () async {
+    expect((await LeanFilePicker.pickFile())?.path, '/a/file');
   });
 }
