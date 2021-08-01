@@ -18,6 +18,6 @@ void main() {
   });
 
   test('pickFile', () async {
-    expect((await LeanFilePicker.pickFile())?.path, '/a/file');
+    expect((await pickFile())?.path, '/a/file');
   });
 }

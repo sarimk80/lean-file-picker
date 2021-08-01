@@ -11,6 +11,7 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
+  var _copying = false;
   var _lastPick = 'No file picked';
 
   @override
@@ -18,7 +19,7 @@ class _MyAppState extends State<MyApp> {
     return MaterialApp(
       home: Scaffold(
         appBar: AppBar(
-          title: const Text('Plugin example app'),
+          title: const Text('File Picker Example'),
         ),
         body: Center(
           child: Column(
@@ -27,7 +28,12 @@ class _MyAppState extends State<MyApp> {
               ElevatedButton(
                 child: Text('Pick File'),
                 onPressed: () async {
-                  final file = await LeanFilePicker.pickFile(allowedExtensions: ['zip']);
+                  final file = await pickFile(
+                    allowedExtensions: ['zip'],
+                    allowedMimeTypes: ['image/jpeg', 'text/*'],
+                    listener: (status) =>
+                        setState(() => _copying = status == FilePickerStatus.copying),
+                  );
                   if (file != null) {
                     final path = file.path;
                     final size = file.lengthSync();
@@ -38,13 +44,23 @@ class _MyAppState extends State<MyApp> {
                   }
                 },
               ),
-              Padding(
-                padding: const EdgeInsets.all(10),
-                child: Text(
-                  _lastPick,
-                  textAlign: TextAlign.center,
+              if (_copying)
+                Padding(
+                  padding: const EdgeInsets.all(10),
+                  child: Text(
+                    "Copying data to temporary file",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                  ),
                 ),
-              ),
+              if (!_copying)
+                Padding(
+                  padding: const EdgeInsets.all(10),
+                  child: Text(
+                    _lastPick,
+                    textAlign: TextAlign.center,
+                  ),
+                ),
             ],
           ),
         ),
