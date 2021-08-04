@@ -1,5 +1,7 @@
 # Lean File Picker
 
+![Pub Version](https://img.shields.io/pub/v/lean_file_picker)
+
 Pick a single file using the native file explorer.
 
 ## Motivation

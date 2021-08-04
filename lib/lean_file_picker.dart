@@ -46,8 +46,8 @@ Future<File?> pickFile({
   return completer.future;
 }
 
-const MethodChannel _channel = const MethodChannel('lean_file_picker');
-const EventChannel _eventChannel = const EventChannel('lean_file_picker_events');
+const _channel = const MethodChannel('lean_file_picker');
+const _eventChannel = const EventChannel('lean_file_picker_events');
 final _jobController = StreamController<_Job>();
 var _workerStarted = false;
 
@@ -67,13 +67,14 @@ class _Job {
 
 void _worker() async {
   await for (final job in _jobController.stream) {
-    final subscription = _eventChannel.receiveBroadcastStream().cast<bool>().listen((copying) {
+    final stream = _eventChannel.receiveBroadcastStream().cast<bool>();
+    final subscription = stream.listen((copying) {
       if (job.listener != null && copying) {
         job.listener!.call(FilePickerStatus.copying);
       }
     });
 
-    final String? path = await _channel.invokeMethod('pickFile', <String, Object?>{
+    final path = await _channel.invokeMethod('pickFile', <String, Object?>{
       'allowedExtensions': job.allowedExtensions,
       'allowedMimeTypes': job.allowedMimeTypes,
     });

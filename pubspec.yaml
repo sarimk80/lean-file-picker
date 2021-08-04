@@ -1,7 +1,7 @@
 name: lean_file_picker
-description: Pick a single file using the native file explorer
-version: 0.0.1
-homepage: https://github.com/perron2/lean_file_picker
+description: Flutter package to pick a single file using the native file explorer.
+version: 0.0.2
+homepage: https://github.com/perron2/lean-file-picker
 
 environment:
   sdk: ">=2.13.0 <3.0.0"
