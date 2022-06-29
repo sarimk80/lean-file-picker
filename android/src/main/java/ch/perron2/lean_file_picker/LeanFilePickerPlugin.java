@@ -36,7 +36,7 @@ public class LeanFilePickerPlugin implements FlutterPlugin, MethodCallHandler, A
     private EventChannel.EventSink eventSink;
     private Activity activity;
     private Result result;
-
+    
     @Override
     public void onAttachedToEngine(@NonNull FlutterPluginBinding flutterPluginBinding) {
         channel = new MethodChannel(flutterPluginBinding.getBinaryMessenger(), "lean_file_picker");
@@ -48,14 +48,14 @@ public class LeanFilePickerPlugin implements FlutterPlugin, MethodCallHandler, A
             public void onListen(Object arguments, EventChannel.EventSink events) {
                 LeanFilePickerPlugin.this.eventSink = events;
             }
-
+    
             @Override
             public void onCancel(Object arguments) {
                 LeanFilePickerPlugin.this.eventSink = null;
             }
         });
     }
-
+    
     @Override
     public void onMethodCall(@NonNull MethodCall call, @NonNull Result result) {
         this.result = result;
@@ -73,31 +73,31 @@ public class LeanFilePickerPlugin implements FlutterPlugin, MethodCallHandler, A
             result.notImplemented();
         }
     }
-
+    
     @Override
     public void onDetachedFromEngine(@NonNull FlutterPluginBinding binding) {
         channel.setMethodCallHandler(null);
     }
-
+    
     @Override
     public void onAttachedToActivity(@NonNull ActivityPluginBinding binding) {
         activity = binding.getActivity();
         binding.addActivityResultListener(this);
     }
-
+    
     @Override
     public void onDetachedFromActivityForConfigChanges() {
     }
-
+    
     @Override
     public void onReattachedToActivityForConfigChanges(@NonNull ActivityPluginBinding binding) {
     }
-
+    
     @Override
     public void onDetachedFromActivity() {
         activity = null;
     }
-
+    
     private void pickFile(List<String> extensions, List<String> mimeTypes) {
         List<String> allMimeTypes = new ArrayList<>(extensions.size() + mimeTypes.size());
         allMimeTypes.addAll(mimeTypes);
@@ -107,37 +107,45 @@ public class LeanFilePickerPlugin implements FlutterPlugin, MethodCallHandler, A
                 allMimeTypes.add(mimeType);
             }
         }
-
+    
         Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
         intent.addCategory(Intent.CATEGORY_OPENABLE);
         intent.setType("*/*");
         if (!allMimeTypes.isEmpty()) {
             intent.putExtra(Intent.EXTRA_MIME_TYPES, allMimeTypes.toArray(new String[0]));
         }
-
+    
         activity.startActivityForResult(intent, REQUEST_OPEN_DOCUMENT);
     }
-
+    
     @Override
     public boolean onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == REQUEST_OPEN_DOCUMENT) {
             if (resultCode == Activity.RESULT_OK && data != null) {
-                Uri documentUri = data.getData();
+                final Uri documentUri = data.getData();
                 if (documentUri != null) {
                     String name = queryFileName(activity.getContentResolver(), documentUri);
                     File cacheDir = activity.getCacheDir();
-                    File outputFile = new File(cacheDir, name);
+                    final File outputFile = new File(cacheDir, name);
                     eventSink.success(true);
-                    new Thread(() -> {
-                        boolean success = copyFile(documentUri, outputFile);
-                        activity.runOnUiThread(() -> {
-                            eventSink.success(false);
-                            if (success) {
-                                result.success(outputFile.toString());
-                            } else {
-                                result.success(null);
-                            }
-                        });
+                    //Threads reverted to runnable anon classes in place of Lamda's
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run(){
+                            final boolean success = copyFile(documentUri, outputFile);
+                            activity.runOnUiThread(new Runnable() {
+                                @Override
+                                        public void run(){
+                                    eventSink.success(false);
+                                    if (success) {
+                                        result.success(outputFile.toString());
+                                    } else {
+                                        result.success(null);
+                                    }
+                                }
+    
+                            });
+                        }
                     }).start();
                     return true;
                 }
@@ -147,7 +155,7 @@ public class LeanFilePickerPlugin implements FlutterPlugin, MethodCallHandler, A
         }
         return false;
     }
-
+    
     private String queryFileName(ContentResolver resolver, Uri uri) {
         Cursor returnCursor = resolver.query(uri, null, null, null, null);
         if (returnCursor != null) {
@@ -159,7 +167,7 @@ public class LeanFilePickerPlugin implements FlutterPlugin, MethodCallHandler, A
         }
         return uri.getLastPathSegment();
     }
-
+    
     private boolean copyFile(Uri sourceUri, File targetFile) {
         try (InputStream stream = activity.getContentResolver().openInputStream(sourceUri)) {
             try (FileOutputStream outStream = new FileOutputStream(targetFile)) {
